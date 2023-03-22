@@ -56,12 +56,20 @@ const configuration = new openai_1.Configuration({
 });
 const openai = new openai_1.OpenAIApi(configuration);
 function getPRDetails() {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const { repository, number } = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH || "", "utf8"));
+        const prResponse = yield octokit.pulls.get({
+            owner: repository.owner.login,
+            repo: repository.name,
+            pull_number: number,
+        });
         return {
             owner: repository.owner.login,
             repo: repository.name,
             pull_number: number,
+            title: (_a = prResponse.data.title) !== null && _a !== void 0 ? _a : "",
+            description: (_b = prResponse.data.body) !== null && _b !== void 0 ? _b : "",
         };
     });
 }
@@ -77,12 +85,12 @@ function getDiff(owner, repo, pull_number) {
         return response.data;
     });
 }
-function analyzeCode(parsedDiff) {
+function analyzeCode(parsedDiff, prDetails) {
     return __awaiter(this, void 0, void 0, function* () {
         const comments = [];
         for (const file of parsedDiff) {
             for (const chunk of file.chunks) {
-                const prompt = createPrompt(file, chunk);
+                const prompt = createPrompt(file, chunk, prDetails);
                 const aiResponse = yield getAIResponse(prompt);
                 if (aiResponse) {
                     const comment = createComment(file, chunk, aiResponse);
@@ -95,9 +103,19 @@ function analyzeCode(parsedDiff) {
         return comments;
     });
 }
-function createPrompt(file, chunk) {
+function createPrompt(file, chunk, prDetails) {
     return `
-Review the following code changes in the file "${file.to}" and provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. If the code looks good, DO NOT return any text (leave the response completely empty)
+Review the following code changes in the file "${file.to}" and take the pull request title and description into account when writing the response.
+  
+Title: ${prDetails.title}
+
+Description:
+
+---
+${prDetails.description}
+---
+
+Please provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. If the code looks good, DO NOT return any text (leave the response completely empty)
 
 ${chunk.content}
 ${chunk.changes
@@ -172,7 +190,7 @@ function createReviewComment(owner, repo, pull_number, comments) {
         const filteredDiff = parsedDiff.filter((file) => {
             return !excludePatterns.some((pattern) => { var _a; return (0, minimatch_1.default)((_a = file.to) !== null && _a !== void 0 ? _a : "", pattern); });
         });
-        const comments = yield analyzeCode(filteredDiff);
+        const comments = yield analyzeCode(filteredDiff, prDetails);
         if (comments.length > 0) {
             yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments);
         }
