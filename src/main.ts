@@ -20,6 +20,7 @@ interface PRDetails {
   owner: string;
   repo: string;
   pull_number: number;
+  title: string;
   description: string;
 }
 
@@ -36,6 +37,7 @@ async function getPRDetails(): Promise<PRDetails> {
     owner: repository.owner.login,
     repo: repository.name,
     pull_number: number,
+    title: prResponse.data.title ?? "",
     description: prResponse.data.body ?? "",
   };
 }
@@ -57,13 +59,13 @@ async function getDiff(
 
 async function analyzeCode(
   parsedDiff: File[],
-  prDescription: string
+  prDetails: PRDetails
 ): Promise<Array<{ body: string; path: string; line: number }>> {
   const comments: Array<{ body: string; path: string; line: number }> = [];
 
   for (const file of parsedDiff) {
     for (const chunk of file.chunks) {
-      const prompt = createPrompt(file, chunk, prDescription);
+      const prompt = createPrompt(file, chunk, prDetails);
       const aiResponse = await getAIResponse(prompt);
       if (aiResponse) {
         const comment = createComment(file, chunk, aiResponse);
@@ -76,16 +78,18 @@ async function analyzeCode(
   return comments;
 }
 
-function createPrompt(file: File, chunk: Chunk, prDescription: string): string {
+function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `
 Review the following code changes in the file "${
     file.to
-  }" and take the pull request description into account when writing the response.
+  }" and take the pull request title and description into account when writing the response.
   
+Title: ${prDetails.title}
+
 Description:
 
 ---
-${prDescription}
+${prDetails.description}
 ---
 
 Please provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. If the code looks good, DO NOT return any text (leave the response completely empty)
@@ -183,7 +187,7 @@ async function createReviewComment(
     );
   });
 
-  const comments = await analyzeCode(filteredDiff, prDetails.description);
+  const comments = await analyzeCode(filteredDiff, prDetails);
   if (comments.length > 0) {
     await createReviewComment(
       prDetails.owner,
