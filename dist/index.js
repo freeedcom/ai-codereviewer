@@ -97,7 +97,7 @@ function analyzeCode(parsedDiff) {
 }
 function createPrompt(file, chunk) {
     return `
-Review the following code changes in the file "${file.to}" and provide comments and suggestions ONLY if there is something to improve. If the code looks good, DO NOT return any text (leave the response completely empty)
+Review the following code changes in the file "${file.to}" and provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. If the code looks good, DO NOT return any text (leave the response completely empty)
 
 ${chunk.content}
 ${chunk.changes

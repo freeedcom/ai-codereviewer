@@ -1,4 +1,4 @@
-name: "OpenAI Code Review Action"
+name: "AI Code Review Action"
 description: "Perform code reviews and comment on diffs using OpenAI API."
 inputs:
   GITHUB_TOKEN:
