@@ -1,0 +1,19 @@
+name: Code Review with OpenAI
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+permissions: write-all
+jobs:
+  code_review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Code Review
+        uses: freeedcom/open-ai-codereviewer@test-this
+        with:
+          GITHUB_TOKEN: ${{ secrets.GH_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          exclude: "yarn.lock,dist/**"

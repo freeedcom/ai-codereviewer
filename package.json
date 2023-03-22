@@ -1,0 +1,28 @@
+{
+  "name": "open-ai-reviewer",
+  "version": "1.0.0",
+  "description": "Open AI powered code reviews",
+  "main": "lib/main.js",
+  "author": "Ville Saukkonen",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "package": "ncc build --source-map --license licenses.txt",
+    "format": "prettier --write .",
+    "lint": "prettier --check ."
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@octokit/rest": "^19.0.7",
+    "minimatch": "^7.4.2",
+    "openai": "^3.2.1",
+    "parse-diff": "^0.11.1",
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.5",
+    "@vercel/ncc": "^0.36.1",
+    "prettier": "^2.8.6",
+    "typescript": "^5.0.2"
+  }
+}
