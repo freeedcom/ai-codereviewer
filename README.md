@@ -29,13 +29,13 @@ on:
     types:
       - opened
       - synchronize
-
+permissions: write-all
 jobs:
   review:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: AI Code Reviewer
         uses: your-username/ai-code-reviewer@main
