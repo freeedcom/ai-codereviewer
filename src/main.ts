@@ -20,16 +20,23 @@ interface PRDetails {
   owner: string;
   repo: string;
   pull_number: number;
+  description: string;
 }
 
 async function getPRDetails(): Promise<PRDetails> {
   const { repository, number } = JSON.parse(
     readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
   );
+  const prResponse = await octokit.pulls.get({
+    owner: repository.owner.login,
+    repo: repository.name,
+    pull_number: number,
+  });
   return {
     owner: repository.owner.login,
     repo: repository.name,
     pull_number: number,
+    description: prResponse.data.body ?? "",
   };
 }
 
@@ -49,13 +56,14 @@ async function getDiff(
 }
 
 async function analyzeCode(
-  parsedDiff: File[]
+  parsedDiff: File[],
+  prDescription: string
 ): Promise<Array<{ body: string; path: string; line: number }>> {
   const comments: Array<{ body: string; path: string; line: number }> = [];
 
   for (const file of parsedDiff) {
     for (const chunk of file.chunks) {
-      const prompt = createPrompt(file, chunk);
+      const prompt = createPrompt(file, chunk, prDescription);
       const aiResponse = await getAIResponse(prompt);
       if (aiResponse) {
         const comment = createComment(file, chunk, aiResponse);
@@ -68,11 +76,19 @@ async function analyzeCode(
   return comments;
 }
 
-function createPrompt(file: File, chunk: Chunk): string {
+function createPrompt(file: File, chunk: Chunk, prDescription: string): string {
   return `
 Review the following code changes in the file "${
     file.to
-  }" and provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. If the code looks good, DO NOT return any text (leave the response completely empty)
+  }" and take the pull request description into account when writing the response.
+  
+Description:
+
+---
+${prDescription}
+---
+
+Please provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. If the code looks good, DO NOT return any text (leave the response completely empty)
 
 ${chunk.content}
 ${chunk.changes
@@ -167,7 +183,7 @@ async function createReviewComment(
     );
   });
 
-  const comments = await analyzeCode(filteredDiff);
+  const comments = await analyzeCode(filteredDiff, prDetails.description);
   if (comments.length > 0) {
     await createReviewComment(
       prDetails.owner,
