@@ -80,8 +80,7 @@ async function analyzeCode(
 }
 
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
-  return `
-Review the following code diff in the file "${
+  return `Review the following code diff in the file "${
     file.to
   }" and take the pull request title and description into account when writing the response.
   
@@ -97,12 +96,10 @@ Please provide comments and suggestions ONLY if there is something to improve, w
 
 Diff to review:
 
----
+\`\`\`diff
 ${chunk.content}
-${chunk.changes
-  .map((c) => (c.type === "add" ? "+" : "-") + " " + c.content)
-  .join("\n")}
----
+${chunk.changes.map((c) => c.content).join("\n")}
+\`\`\`
 
 Give the answer in following TSV format:
 line_number\treview_comment

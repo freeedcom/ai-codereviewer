@@ -105,8 +105,7 @@ function analyzeCode(parsedDiff, prDetails) {
     });
 }
 function createPrompt(file, chunk, prDetails) {
-    return `
-Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
+    return `Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
   
 Title: ${prDetails.title}
 
@@ -120,12 +119,22 @@ Please provide comments and suggestions ONLY if there is something to improve, w
 
 Diff to review:
 
----
+\`\`\`diff
 ${chunk.content}
 ${chunk.changes
-        .map((c) => (c.type === "add" ? "+" : "-") + " " + c.content)
+        .map((c) => {
+        if (c.type === "add") {
+            return "+ " + c.content;
+        }
+        else if (c.type === "del") {
+            return "- " + c.content;
+        }
+        else {
+            return "  " + c.content;
+        }
+    })
         .join("\n")}
----
+\`\`\`
 
 Give the answer in following TSV format:
 line_number\treview_comment
