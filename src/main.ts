@@ -138,6 +138,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
       delimiter: "\t",
       columns: ["line_number", "review_comment"],
       skip_empty_lines: true,
+      relax_quotes: true,
     });
   } catch (error) {
     console.error("Error:", error);

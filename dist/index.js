@@ -119,6 +119,7 @@ ${prDetails.description}
 Please provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. Don't give positive comments. Use the description only for the overall context and only comment the code.
 
 Diff to review:
+
 ---
 ${chunk.content}
 ${chunk.changes
@@ -136,7 +137,7 @@ function getAIResponse(prompt) {
         const queryConfig = {
             model: "gpt-4",
             temperature: 0.2,
-            max_tokens: 400,
+            max_tokens: 700,
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0,
@@ -153,6 +154,7 @@ function getAIResponse(prompt) {
                 delimiter: "\t",
                 columns: ["line_number", "review_comment"],
                 skip_empty_lines: true,
+                relax_quotes: true,
             });
         }
         catch (error) {
