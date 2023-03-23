@@ -4,6 +4,7 @@ import { Configuration, OpenAIApi } from "openai";
 import { Octokit } from "@octokit/rest";
 import parseDiff, { Chunk, File } from "parse-diff";
 import minimatch from "minimatch";
+import { parse } from "csv-parse/sync";
 
 const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
@@ -68,9 +69,9 @@ async function analyzeCode(
       const prompt = createPrompt(file, chunk, prDetails);
       const aiResponse = await getAIResponse(prompt);
       if (aiResponse) {
-        const comment = createComment(file, chunk, aiResponse);
-        if (comment) {
-          comments.push(comment);
+        const newComments = createComment(file, chunk, aiResponse);
+        if (newComments) {
+          comments.concat(newComments);
         }
       }
     }
@@ -80,7 +81,7 @@ async function analyzeCode(
 
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `
-Review the following code changes in the file "${
+Review the following code diff in the file "${
     file.to
   }" and take the pull request title and description into account when writing the response.
   
@@ -92,20 +93,30 @@ Description:
 ${prDetails.description}
 ---
 
-Please provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. If the code looks good, DO NOT return any text (leave the response completely empty)
+Please provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. Don't give positive comments. Use the description only for the overall context and only comment the code.
 
+Diff to review:
+
+---
 ${chunk.content}
 ${chunk.changes
   .map((c) => (c.type === "add" ? "+" : "-") + " " + c.content)
   .join("\n")}
+---
+
+Give the answer in following TSV format:
+line_number\treview_comment
 `;
 }
 
-async function getAIResponse(prompt: string): Promise<string | null> {
+async function getAIResponse(prompt: string): Promise<Array<{
+  line_number: string;
+  review_comment: string;
+}> | null> {
   const queryConfig = {
     model: "gpt-4",
     temperature: 0.2,
-    max_tokens: 400,
+    max_tokens: 700,
     top_p: 1,
     frequency_penalty: 0,
     presence_penalty: 0,
@@ -122,7 +133,12 @@ async function getAIResponse(prompt: string): Promise<string | null> {
       ],
     });
 
-    return response.data.choices[0].message?.content?.trim() || null;
+    const res = response.data.choices[0].message?.content?.trim() || "";
+    return parse(res, {
+      delimiter: "\t",
+      columns: ["line_number", "review_comment"],
+      skip_empty_lines: true,
+    });
   } catch (error) {
     console.error("Error:", error);
     return null;
@@ -132,20 +148,21 @@ async function getAIResponse(prompt: string): Promise<string | null> {
 function createComment(
   file: File,
   chunk: Chunk,
-  aiResponse: string
-): { body: string; path: string; line: number } | null {
-  const lastAddChange = [...chunk.changes]
-    .reverse()
-    .find((c) => c.type === "add");
-  if (lastAddChange && file.to) {
+  aiResponses: Array<{
+    line_number: string;
+    review_comment: string;
+  }>
+): Array<{ body: string; path: string; line: number }> {
+  return aiResponses.flatMap((aiResponse) => {
+    if (!file.to) {
+      return [];
+    }
     return {
-      body: aiResponse,
+      body: aiResponse.review_comment,
       path: file.to,
-      // @ts-expect-error below properties exists on AddChange
-      line: lastAddChange.ln || lastAddChange.ln1,
+      line: Number(aiResponse.line_number),
     };
-  }
-  return null;
+  });
 }
 
 async function createReviewComment(
