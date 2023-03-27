@@ -97,7 +97,7 @@ function analyzeCode(parsedDiff, prDetails) {
                 if (aiResponse) {
                     const newComments = createComment(file, chunk, aiResponse);
                     if (newComments) {
-                        comments.concat(newComments);
+                        comments.push(...newComments);
                     }
                 }
             }
