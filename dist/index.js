@@ -111,9 +111,9 @@ function createPrompt(file, chunk, prDetails) {
 - Write the comment in GitHub markdown.
 - Don't give positive comments.
 - Use the given description only for the overall context and only comment the code.
+- Calculate the line number from \`@@ -WW,XX +YY,ZZ @@\` using following formula: \`YY + L = line_number\`, where \`YY\` is the starting line number from the diff hunk, and \`L\` is the number of lines (including unchanged lines) from the starting line until the line you want to comment on. Pay special attention to this instruction and ensure that you count lines accurately.
   
-  
-  Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
+Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
   
 Pull request title: ${prDetails.title}
 Pull request description:
