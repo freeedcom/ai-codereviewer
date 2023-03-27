@@ -4,7 +4,6 @@ import { Configuration, OpenAIApi } from "openai";
 import { Octokit } from "@octokit/rest";
 import parseDiff, { Chunk, File } from "parse-diff";
 import minimatch from "minimatch";
-import { parse } from "csv-parse/sync";
 
 const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
@@ -80,35 +79,36 @@ async function analyzeCode(
 }
 
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
-  return `Review the following code diff in the file "${
+  return `- Provide the response in following JSON format:  [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]
+- Provide comments and suggestions ONLY if there is something to improve, otherwise return an empty array.
+- Write the comment in GitHub markdown.
+- Don't give positive comments.
+- Use the given description only for the overall context and only comment the code.
+  
+  
+  Review the following code diff in the file "${
     file.to
   }" and take the pull request title and description into account when writing the response.
   
-Title: ${prDetails.title}
-
-Description:
+Pull request title: ${prDetails.title}
+Pull request description:
 
 ---
 ${prDetails.description}
 ---
 
-Please provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. Don't give positive comments. Use the description only for the overall context and only comment the code.
-
-Diff to review:
+Git diff to review:
 
 \`\`\`diff
 ${chunk.content}
 ${chunk.changes.map((c) => c.content).join("\n")}
 \`\`\`
-
-Give the answer in following TSV format:
-line_number\treview_comment
 `;
 }
 
 async function getAIResponse(prompt: string): Promise<Array<{
-  line_number: string;
-  review_comment: string;
+  lineNumber: string;
+  reviewComment: string;
 }> | null> {
   const queryConfig = {
     model: "gpt-4",
@@ -131,12 +131,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
     });
 
     const res = response.data.choices[0].message?.content?.trim() || "";
-    return parse(res, {
-      delimiter: "\t",
-      columns: ["line_number", "review_comment"],
-      skip_empty_lines: true,
-      relax_quotes: true,
-    });
+    return JSON.parse(res);
   } catch (error) {
     console.error("Error:", error);
     return null;
@@ -147,8 +142,8 @@ function createComment(
   file: File,
   chunk: Chunk,
   aiResponses: Array<{
-    line_number: string;
-    review_comment: string;
+    lineNumber: string;
+    reviewComment: string;
   }>
 ): Array<{ body: string; path: string; line: number }> {
   return aiResponses.flatMap((aiResponse) => {
@@ -156,9 +151,9 @@ function createComment(
       return [];
     }
     return {
-      body: aiResponse.review_comment,
+      body: aiResponse.reviewComment,
       path: file.to,
-      line: Number(aiResponse.line_number),
+      line: Number(aiResponse.lineNumber),
     };
   });
 }
