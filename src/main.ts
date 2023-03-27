@@ -130,7 +130,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
       ],
     });
 
-    const res = response.data.choices[0].message?.content?.trim() || "";
+    const res = response.data.choices[0].message?.content?.trim() || "[]";
     return JSON.parse(res);
   } catch (error) {
     console.error("Error:", error);
