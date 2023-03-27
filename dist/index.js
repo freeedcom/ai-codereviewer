@@ -93,9 +93,9 @@ function analyzeCode(parsedDiff, prDetails) {
                 const prompt = createPrompt(file, chunk, prDetails);
                 const aiResponse = yield getAIResponse(prompt);
                 if (aiResponse) {
-                    const comment = createComment(file, chunk, aiResponse);
-                    if (comment) {
-                        comments.push(comment);
+                    const newComments = createComment(file, chunk, aiResponse);
+                    if (newComments) {
+                        comments.push(...newComments);
                     }
                 }
             }
@@ -104,23 +104,28 @@ function analyzeCode(parsedDiff, prDetails) {
     });
 }
 function createPrompt(file, chunk, prDetails) {
-    return `
-Review the following code changes in the file "${file.to}" and take the pull request title and description into account when writing the response.
+    return `- Provide the response in following JSON format:  [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]
+- Provide comments and suggestions ONLY if there is something to improve, otherwise return an empty array.
+- Write the comment in GitHub markdown.
+- Don't give positive comments.
+- Use the given description only for the overall context and only comment the code.
+- Calculate the line number from \`@@ -WW,XX +YY,ZZ @@\` using following formula: \`YY + L = line_number\`, where \`YY\` is the starting line number from the diff hunk, and \`L\` is the number of lines (including unchanged lines) from the starting line until the line you want to comment on. Pay special attention to this instruction and ensure that you count lines accurately.
   
-Title: ${prDetails.title}
-
-Description:
+Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
+  
+Pull request title: ${prDetails.title}
+Pull request description:
 
 ---
 ${prDetails.description}
 ---
 
-Please provide comments and suggestions ONLY if there is something to improve, write the answer in Github markdown. If the code looks good, DO NOT return any text (leave the response completely empty)
+Git diff to review:
 
+\`\`\`diff
 ${chunk.content}
-${chunk.changes
-        .map((c) => (c.type === "add" ? "+" : "-") + " " + c.content)
-        .join("\n")}
+${chunk.changes.map((c) => c.content).join("\n")}
+\`\`\`
 `;
 }
 function getAIResponse(prompt) {
@@ -129,7 +134,7 @@ function getAIResponse(prompt) {
         const queryConfig = {
             model: "gpt-4",
             temperature: 0.2,
-            max_tokens: 400,
+            max_tokens: 700,
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0,
@@ -141,7 +146,8 @@ function getAIResponse(prompt) {
                         content: prompt,
                     },
                 ] }));
-            return ((_b = (_a = response.data.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.trim()) || null;
+            const res = ((_b = (_a = response.data.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.trim()) || "[]";
+            return JSON.parse(res);
         }
         catch (error) {
             console.error("Error:", error);
@@ -149,19 +155,17 @@ function getAIResponse(prompt) {
         }
     });
 }
-function createComment(file, chunk, aiResponse) {
-    const lastAddChange = [...chunk.changes]
-        .reverse()
-        .find((c) => c.type === "add");
-    if (lastAddChange && file.to) {
+function createComment(file, chunk, aiResponses) {
+    return aiResponses.flatMap((aiResponse) => {
+        if (!file.to) {
+            return [];
+        }
         return {
-            body: aiResponse,
+            body: aiResponse.reviewComment,
             path: file.to,
-            // @ts-expect-error below properties exists on AddChange
-            line: lastAddChange.ln || lastAddChange.ln1,
+            line: Number(aiResponse.lineNumber),
         };
-    }
-    return null;
+    });
 }
 function createReviewComment(owner, repo, pull_number, comments) {
     return __awaiter(this, void 0, void 0, function* () {
