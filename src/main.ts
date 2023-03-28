@@ -80,12 +80,12 @@ async function analyzeCode(
 
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `- Provide the response in following JSON format:  [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]
+- Do not give positive comments or compliments.
+- Refrain from suggesting to comment on the code.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise return an empty array.
 - Write the comment in GitHub markdown.
-- Don't give positive comments.
 - Use the given description only for the overall context and only comment the code.
-- Calculate the line number from \`@@ -WW,XX +YY,ZZ @@\` using following formula: \`YY + L = line_number\`, where \`YY\` is the starting line number from the diff hunk, and \`L\` is the number of lines (including unchanged lines) from the starting line until the line you want to comment on. Pay special attention to this instruction and ensure that you count lines accurately.
-  
+
 Review the following code diff in the file "${
     file.to
   }" and take the pull request title and description into account when writing the response.
@@ -101,7 +101,10 @@ Git diff to review:
 
 \`\`\`diff
 ${chunk.content}
-${chunk.changes.map((c) => c.content).join("\n")}
+${chunk.changes
+  // @ts-expect-error - ln and ln2 exists where needed
+  .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
+  .join("\n")}
 \`\`\`
 `;
 }
