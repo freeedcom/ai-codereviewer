@@ -64,13 +64,15 @@ async function analyzeCode(
   const comments: Array<{ body: string; path: string; line: number }> = [];
 
   for (const file of parsedDiff) {
-    for (const chunk of file.chunks) {
-      const prompt = createPrompt(file, chunk, prDetails);
-      const aiResponse = await getAIResponse(prompt);
-      if (aiResponse) {
-        const newComments = createComment(file, chunk, aiResponse);
-        if (newComments) {
-          comments.push(...newComments);
+    if (file.to !== '/dev/null') {
+      for (const chunk of file.chunks) {
+        const prompt = createPrompt(file, chunk, prDetails);
+        const aiResponse = await getAIResponse(prompt);
+        if (aiResponse) {
+          const newComments = createComment(file, chunk, aiResponse);
+          if (newComments) {
+            comments.push(...newComments);
+          }
         }
       }
     }
@@ -86,9 +88,8 @@ function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
 - Write the comment in GitHub markdown.
 - Use the given description only for the overall context and only comment the code.
 
-Review the following code diff in the file "${
-    file.to
-  }" and take the pull request title and description into account when writing the response.
+Review the following code diff in the file "${file.to
+    }" and take the pull request title and description into account when writing the response.
   
 Pull request title: ${prDetails.title}
 Pull request description:
@@ -102,9 +103,9 @@ Git diff to review:
 \`\`\`diff
 ${chunk.content}
 ${chunk.changes
-  // @ts-expect-error - ln and ln2 exists where needed
-  .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
-  .join("\n")}
+      // @ts-expect-error - ln and ln2 exists where needed
+      .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
+      .join("\n")}
 \`\`\`
 `;
 }

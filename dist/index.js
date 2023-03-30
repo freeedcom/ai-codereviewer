@@ -1,4 +1,4 @@
-require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
+/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 3109:
@@ -89,13 +89,15 @@ function analyzeCode(parsedDiff, prDetails) {
     return __awaiter(this, void 0, void 0, function* () {
         const comments = [];
         for (const file of parsedDiff) {
-            for (const chunk of file.chunks) {
-                const prompt = createPrompt(file, chunk, prDetails);
-                const aiResponse = yield getAIResponse(prompt);
-                if (aiResponse) {
-                    const newComments = createComment(file, chunk, aiResponse);
-                    if (newComments) {
-                        comments.push(...newComments);
+            if (file.to !== '/dev/null') {
+                for (const chunk of file.chunks) {
+                    const prompt = createPrompt(file, chunk, prDetails);
+                    const aiResponse = yield getAIResponse(prompt);
+                    if (aiResponse) {
+                        const newComments = createComment(file, chunk, aiResponse);
+                        if (newComments) {
+                            comments.push(...newComments);
+                        }
                     }
                 }
             }
@@ -18526,4 +18528,3 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	
 /******/ })()
 ;
-//# sourceMappingURL=index.js.map
