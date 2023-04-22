@@ -201,17 +201,11 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const prDetails = yield getPRDetails();
         let diff;
-        console.log("Running the action...");
         const eventData = JSON.parse((0, fs_1.readFileSync)((_a = process.env.GITHUB_EVENT_PATH) !== null && _a !== void 0 ? _a : "", "utf8"));
-        console.log("Event data:");
-        console.log(eventData);
         if (eventData.action === "opened") {
-            console.log("Pull request event");
             diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
         }
         else if (eventData.action === "synchronize") {
-            console.log("Push event");
-            console.log(eventData);
             const newBaseSha = eventData.before;
             const newHeadSha = eventData.after;
             const response = yield octokit.repos.compareCommits({
@@ -225,8 +219,6 @@ function main() {
                     .request({ url: response.data.diff_url })
                     .then((res) => res.data)
                 : null;
-            console.log("Diff:");
-            console.log(diff);
         }
         else {
             console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
