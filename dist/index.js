@@ -197,24 +197,23 @@ function createReviewComment(owner, repo, pull_number, comments) {
     });
 }
 function main() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const prDetails = yield getPRDetails();
         let diff;
         console.log("Running the action...");
-        console.log("Event name:", process.env.GITHUB_EVENT_NAME);
-        console.log("PR event path:");
-        console.log(process.env.GITHUB_EVENT_PATH);
-        if (process.env.GITHUB_EVENT_NAME === "pull_request") {
+        const eventData = JSON.parse((0, fs_1.readFileSync)((_a = process.env.GITHUB_EVENT_PATH) !== null && _a !== void 0 ? _a : "", "utf8"));
+        console.log("Event data:");
+        console.log(eventData);
+        if (eventData.action === "opened") {
             console.log("Pull request event");
             diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
         }
-        else if (process.env.GITHUB_EVENT_NAME === "push") {
+        else if (eventData.action === "synchronize") {
             console.log("Push event");
-            const pushEvent = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH || "", "utf8"));
-            console.log("Push event:");
-            console.log(pushEvent);
-            const newBaseSha = pushEvent.before;
-            const newHeadSha = pushEvent.after;
+            console.log(eventData);
+            const newBaseSha = eventData.before;
+            const newHeadSha = eventData.after;
             const response = yield octokit.repos.compareCommits({
                 owner: prDetails.owner,
                 repo: prDetails.repo,
