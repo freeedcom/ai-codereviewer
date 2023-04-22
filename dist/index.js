@@ -216,14 +216,20 @@ function main() {
             diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
         }
         else if (process.env.GITHUB_EVENT_NAME === "push") {
-            const diffUrl = yield getChangedFiles(prDetails.owner, prDetails.repo, baseSha, headSha);
-            if (diffUrl) {
-                const diffResponse = yield octokit.request({ url: diffUrl });
-                diff = diffResponse.data;
-            }
-            else {
-                diff = null;
-            }
+            const pushEvent = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH || "", "utf8"));
+            const newBaseSha = pushEvent.before;
+            const newHeadSha = pushEvent.after;
+            const response = yield octokit.repos.compareCommits({
+                owner: prDetails.owner,
+                repo: prDetails.repo,
+                base: newBaseSha,
+                head: newHeadSha,
+            });
+            diff = response.data.diff_url
+                ? yield octokit
+                    .request({ url: response.data.diff_url })
+                    .then((res) => res.data)
+                : null;
         }
         else {
             console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
@@ -247,10 +253,6 @@ function main() {
         }
     });
 }
-main().catch((error) => {
-    console.error("Error:", error);
-    process.exit(1);
-});
 
 
 /***/ }),
