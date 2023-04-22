@@ -89,6 +89,8 @@ function analyzeCode(parsedDiff, prDetails) {
     return __awaiter(this, void 0, void 0, function* () {
         const comments = [];
         for (const file of parsedDiff) {
+            if (file.to === "/dev/null")
+                continue; // Ignore deleted files
             for (const chunk of file.chunks) {
                 const prompt = createPrompt(file, chunk, prDetails);
                 const aiResponse = yield getAIResponse(prompt);
@@ -101,6 +103,30 @@ function analyzeCode(parsedDiff, prDetails) {
             }
         }
         return comments;
+    });
+}
+function getChangedFiles(owner, repo, baseSha, headSha) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield octokit.repos.compareCommits({
+            owner,
+            repo,
+            base: baseSha,
+            head: headSha,
+        });
+        return response.data.diff_url;
+    });
+}
+function getBaseAndHeadShas(owner, repo, pull_number) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const prResponse = yield octokit.pulls.get({
+            owner,
+            repo,
+            pull_number,
+        });
+        return {
+            baseSha: prResponse.data.base.sha,
+            headSha: prResponse.data.head.sha,
+        };
     });
 }
 function createPrompt(file, chunk, prDetails) {
@@ -181,14 +207,27 @@ function createReviewComment(owner, repo, pull_number, comments) {
         });
     });
 }
-(function main() {
+function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const prDetails = yield getPRDetails();
-        const diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
-        if (!diff) {
+        const { baseSha, headSha } = yield getBaseAndHeadShas(prDetails.owner, prDetails.repo, prDetails.pull_number);
+        let diffUrl;
+        if (process.env.GITHUB_EVENT_NAME === "pull_request") {
+            diffUrl = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
+        }
+        else if (process.env.GITHUB_EVENT_NAME === "push") {
+            diffUrl = yield getChangedFiles(prDetails.owner, prDetails.repo, baseSha, headSha);
+        }
+        else {
+            console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
+            return;
+        }
+        if (!diffUrl) {
             console.log("No diff found");
             return;
         }
+        const diffResponse = yield octokit.request({ url: diffUrl });
+        const diff = diffResponse.data;
         const parsedDiff = (0, parse_diff_1.default)(diff);
         const excludePatterns = core
             .getInput("exclude")
@@ -202,7 +241,8 @@ function createReviewComment(owner, repo, pull_number, comments) {
             yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments);
         }
     });
-})().catch((error) => {
+}
+main().catch((error) => {
     console.error("Error:", error);
     process.exit(1);
 });

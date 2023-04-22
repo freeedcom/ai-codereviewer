@@ -79,6 +79,37 @@ async function analyzeCode(
   return comments;
 }
 
+async function getChangedFiles(
+  owner: string,
+  repo: string,
+  baseSha: string,
+  headSha: string
+): Promise<string | null> {
+  const response = await octokit.repos.compareCommits({
+    owner,
+    repo,
+    base: baseSha,
+    head: headSha,
+  });
+  return response.data.diff_url;
+}
+
+async function getBaseAndHeadShas(
+  owner: string,
+  repo: string,
+  pull_number: number
+): Promise<{ baseSha: string; headSha: string }> {
+  const prResponse = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number,
+  });
+  return {
+    baseSha: prResponse.data.base.sha,
+    headSha: prResponse.data.head.sha,
+  };
+}
+
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `- Provide the response in following JSON format:  [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]
 - Do not give positive comments or compliments.
@@ -177,19 +208,43 @@ async function createReviewComment(
   });
 }
 
-(async function main() {
+async function main() {
   const prDetails = await getPRDetails();
-  const diff = await getDiff(
+  const { baseSha, headSha } = await getBaseAndHeadShas(
     prDetails.owner,
     prDetails.repo,
     prDetails.pull_number
   );
-  if (!diff) {
+
+  let diffUrl: string | null;
+
+  if (process.env.GITHUB_EVENT_NAME === "pull_request") {
+    diffUrl = await getDiff(
+      prDetails.owner,
+      prDetails.repo,
+      prDetails.pull_number
+    );
+  } else if (process.env.GITHUB_EVENT_NAME === "push") {
+    diffUrl = await getChangedFiles(
+      prDetails.owner,
+      prDetails.repo,
+      baseSha,
+      headSha
+    );
+  } else {
+    console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
+    return;
+  }
+
+  if (!diffUrl) {
     console.log("No diff found");
     return;
   }
 
+  const diffResponse = await octokit.request({ url: diffUrl });
+  const diff = diffResponse.data;
   const parsedDiff = parseDiff(diff);
+
   const excludePatterns = core
     .getInput("exclude")
     .split(",")
@@ -210,7 +265,9 @@ async function createReviewComment(
       comments
     );
   }
-})().catch((error) => {
+}
+
+main().catch((error) => {
   console.error("Error:", error);
   process.exit(1);
 });
