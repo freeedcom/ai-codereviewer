@@ -211,23 +211,28 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const prDetails = yield getPRDetails();
         const { baseSha, headSha } = yield getBaseAndHeadShas(prDetails.owner, prDetails.repo, prDetails.pull_number);
-        let diffUrl;
+        let diff;
         if (process.env.GITHUB_EVENT_NAME === "pull_request") {
-            diffUrl = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
+            diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
         }
         else if (process.env.GITHUB_EVENT_NAME === "push") {
-            diffUrl = yield getChangedFiles(prDetails.owner, prDetails.repo, baseSha, headSha);
+            const diffUrl = yield getChangedFiles(prDetails.owner, prDetails.repo, baseSha, headSha);
+            if (diffUrl) {
+                const diffResponse = yield octokit.request({ url: diffUrl });
+                diff = diffResponse.data;
+            }
+            else {
+                diff = null;
+            }
         }
         else {
             console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
             return;
         }
-        if (!diffUrl) {
+        if (!diff) {
             console.log("No diff found");
             return;
         }
-        const diffResponse = yield octokit.request({ url: diffUrl });
-        const diff = diffResponse.data;
         const parsedDiff = (0, parse_diff_1.default)(diff);
         const excludePatterns = core
             .getInput("exclude")

@@ -216,33 +216,37 @@ async function main() {
     prDetails.pull_number
   );
 
-  let diffUrl: string | null;
+  let diff: string | null;
 
   if (process.env.GITHUB_EVENT_NAME === "pull_request") {
-    diffUrl = await getDiff(
+    diff = await getDiff(
       prDetails.owner,
       prDetails.repo,
       prDetails.pull_number
     );
   } else if (process.env.GITHUB_EVENT_NAME === "push") {
-    diffUrl = await getChangedFiles(
+    const diffUrl = await getChangedFiles(
       prDetails.owner,
       prDetails.repo,
       baseSha,
       headSha
     );
+    if (diffUrl) {
+      const diffResponse = await octokit.request({ url: diffUrl });
+      diff = diffResponse.data;
+    } else {
+      diff = null;
+    }
   } else {
     console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
     return;
   }
 
-  if (!diffUrl) {
+  if (!diff) {
     console.log("No diff found");
     return;
   }
 
-  const diffResponse = await octokit.request({ url: diffUrl });
-  const diff = diffResponse.data;
   const parsedDiff = parseDiff(diff);
 
   const excludePatterns = core
