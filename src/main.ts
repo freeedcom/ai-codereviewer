@@ -79,12 +79,28 @@ async function analyzeCode(
   return comments;
 }
 
+async function getBaseAndHeadShas(
+  owner: string,
+  repo: string,
+  pull_number: number
+): Promise<{ baseSha: string; headSha: string }> {
+  const prResponse = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number,
+  });
+  return {
+    baseSha: prResponse.data.base.sha,
+    headSha: prResponse.data.head.sha,
+  };
+}
+
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `- Provide the response in following JSON format:  [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]
 - Do not give positive comments or compliments.
-- Do not recommend adding comments to the code.
+- NEVER suggest adding a comment explaining the code.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise return an empty array.
-- Write the comment in GitHub markdown.
+- Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
 
 Review the following code diff in the file "${
@@ -177,19 +193,47 @@ async function createReviewComment(
   });
 }
 
-(async function main() {
+async function main() {
   const prDetails = await getPRDetails();
-  const diff = await getDiff(
-    prDetails.owner,
-    prDetails.repo,
-    prDetails.pull_number
+  let diff: string | null;
+  const eventData = JSON.parse(
+    readFileSync(process.env.GITHUB_EVENT_PATH ?? "", "utf8")
   );
+
+  if (eventData.action === "opened") {
+    diff = await getDiff(
+      prDetails.owner,
+      prDetails.repo,
+      prDetails.pull_number
+    );
+  } else if (eventData.action === "synchronize") {
+    const newBaseSha = eventData.before;
+    const newHeadSha = eventData.after;
+
+    const response = await octokit.repos.compareCommits({
+      owner: prDetails.owner,
+      repo: prDetails.repo,
+      base: newBaseSha,
+      head: newHeadSha,
+    });
+
+    diff = response.data.diff_url
+      ? await octokit
+          .request({ url: response.data.diff_url })
+          .then((res) => res.data)
+      : null;
+  } else {
+    console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
+    return;
+  }
+
   if (!diff) {
     console.log("No diff found");
     return;
   }
 
   const parsedDiff = parseDiff(diff);
+
   const excludePatterns = core
     .getInput("exclude")
     .split(",")
@@ -210,7 +254,9 @@ async function createReviewComment(
       comments
     );
   }
-})().catch((error) => {
+}
+
+main().catch((error) => {
   console.error("Error:", error);
   process.exit(1);
 });

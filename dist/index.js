@@ -89,6 +89,8 @@ function analyzeCode(parsedDiff, prDetails) {
     return __awaiter(this, void 0, void 0, function* () {
         const comments = [];
         for (const file of parsedDiff) {
+            if (file.to === "/dev/null")
+                continue; // Ignore deleted files
             for (const chunk of file.chunks) {
                 const prompt = createPrompt(file, chunk, prDetails);
                 const aiResponse = yield getAIResponse(prompt);
@@ -103,12 +105,25 @@ function analyzeCode(parsedDiff, prDetails) {
         return comments;
     });
 }
+function getBaseAndHeadShas(owner, repo, pull_number) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const prResponse = yield octokit.pulls.get({
+            owner,
+            repo,
+            pull_number,
+        });
+        return {
+            baseSha: prResponse.data.base.sha,
+            headSha: prResponse.data.head.sha,
+        };
+    });
+}
 function createPrompt(file, chunk, prDetails) {
     return `- Provide the response in following JSON format:  [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]
 - Do not give positive comments or compliments.
-- Do not recommend adding comments to the code.
+- NEVER suggest adding a comment explaining the code.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise return an empty array.
-- Write the comment in GitHub markdown.
+- Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
 
 Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
@@ -181,10 +196,34 @@ function createReviewComment(owner, repo, pull_number, comments) {
         });
     });
 }
-(function main() {
+function main() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const prDetails = yield getPRDetails();
-        const diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
+        let diff;
+        const eventData = JSON.parse((0, fs_1.readFileSync)((_a = process.env.GITHUB_EVENT_PATH) !== null && _a !== void 0 ? _a : "", "utf8"));
+        if (eventData.action === "opened") {
+            diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
+        }
+        else if (eventData.action === "synchronize") {
+            const newBaseSha = eventData.before;
+            const newHeadSha = eventData.after;
+            const response = yield octokit.repos.compareCommits({
+                owner: prDetails.owner,
+                repo: prDetails.repo,
+                base: newBaseSha,
+                head: newHeadSha,
+            });
+            diff = response.data.diff_url
+                ? yield octokit
+                    .request({ url: response.data.diff_url })
+                    .then((res) => res.data)
+                : null;
+        }
+        else {
+            console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
+            return;
+        }
         if (!diff) {
             console.log("No diff found");
             return;
@@ -202,7 +241,8 @@ function createReviewComment(owner, repo, pull_number, comments) {
             yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments);
         }
     });
-})().catch((error) => {
+}
+main().catch((error) => {
     console.error("Error:", error);
     process.exit(1);
 });
