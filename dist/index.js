@@ -200,10 +200,14 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const prDetails = yield getPRDetails();
         let diff;
+        console.log("Running the action...");
+        console.log("Event name:", process.env.GITHUB_EVENT_NAME);
         if (process.env.GITHUB_EVENT_NAME === "pull_request") {
+            console.log("Pull request event");
             diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
         }
         else if (process.env.GITHUB_EVENT_NAME === "push") {
+            console.log("Push event");
             const pushEvent = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH || "", "utf8"));
             console.log("Push event:");
             console.log(pushEvent);

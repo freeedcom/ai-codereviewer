@@ -196,14 +196,17 @@ async function createReviewComment(
 async function main() {
   const prDetails = await getPRDetails();
   let diff: string | null;
-
+  console.log("Running the action...");
+  console.log("Event name:", process.env.GITHUB_EVENT_NAME);
   if (process.env.GITHUB_EVENT_NAME === "pull_request") {
+    console.log("Pull request event");
     diff = await getDiff(
       prDetails.owner,
       prDetails.repo,
       prDetails.pull_number
     );
   } else if (process.env.GITHUB_EVENT_NAME === "push") {
+    console.log("Push event");
     const pushEvent = JSON.parse(
       readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
     );
