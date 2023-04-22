@@ -132,7 +132,7 @@ function getBaseAndHeadShas(owner, repo, pull_number) {
 function createPrompt(file, chunk, prDetails) {
     return `- Provide the response in following JSON format:  [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]
 - Do not give positive comments or compliments.
-- Do not suggest commenting the code.
+- NEVER suggest adding a comment explaining the code.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise return an empty array.
 - Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
