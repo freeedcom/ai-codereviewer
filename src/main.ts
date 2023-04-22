@@ -198,6 +198,8 @@ async function main() {
   let diff: string | null;
   console.log("Running the action...");
   console.log("Event name:", process.env.GITHUB_EVENT_NAME);
+  console.log("PR event path:");
+  console.log(process.env.GITHUB_EVENT_PATH);
   if (process.env.GITHUB_EVENT_NAME === "pull_request") {
     console.log("Pull request event");
     diff = await getDiff(
