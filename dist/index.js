@@ -105,17 +105,6 @@ function analyzeCode(parsedDiff, prDetails) {
         return comments;
     });
 }
-function getChangedFiles(owner, repo, baseSha, headSha) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const response = yield octokit.repos.compareCommits({
-            owner,
-            repo,
-            base: baseSha,
-            head: headSha,
-        });
-        return response.data.diff_url;
-    });
-}
 function getBaseAndHeadShas(owner, repo, pull_number) {
     return __awaiter(this, void 0, void 0, function* () {
         const prResponse = yield octokit.pulls.get({
@@ -210,13 +199,14 @@ function createReviewComment(owner, repo, pull_number, comments) {
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const prDetails = yield getPRDetails();
-        const { baseSha, headSha } = yield getBaseAndHeadShas(prDetails.owner, prDetails.repo, prDetails.pull_number);
         let diff;
         if (process.env.GITHUB_EVENT_NAME === "pull_request") {
             diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
         }
         else if (process.env.GITHUB_EVENT_NAME === "push") {
             const pushEvent = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH || "", "utf8"));
+            console.log("Push event:");
+            console.log(pushEvent);
             const newBaseSha = pushEvent.before;
             const newHeadSha = pushEvent.after;
             const response = yield octokit.repos.compareCommits({
@@ -230,6 +220,8 @@ function main() {
                     .request({ url: response.data.diff_url })
                     .then((res) => res.data)
                 : null;
+            console.log("Diff:");
+            console.log(diff);
         }
         else {
             console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);

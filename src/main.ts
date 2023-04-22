@@ -79,21 +79,6 @@ async function analyzeCode(
   return comments;
 }
 
-async function getChangedFiles(
-  owner: string,
-  repo: string,
-  baseSha: string,
-  headSha: string
-): Promise<string | null> {
-  const response = await octokit.repos.compareCommits({
-    owner,
-    repo,
-    base: baseSha,
-    head: headSha,
-  });
-  return response.data.diff_url;
-}
-
 async function getBaseAndHeadShas(
   owner: string,
   repo: string,
@@ -210,12 +195,6 @@ async function createReviewComment(
 
 async function main() {
   const prDetails = await getPRDetails();
-  const { baseSha, headSha } = await getBaseAndHeadShas(
-    prDetails.owner,
-    prDetails.repo,
-    prDetails.pull_number
-  );
-
   let diff: string | null;
 
   if (process.env.GITHUB_EVENT_NAME === "pull_request") {
@@ -228,6 +207,8 @@ async function main() {
     const pushEvent = JSON.parse(
       readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
     );
+    console.log("Push event:");
+    console.log(pushEvent);
     const newBaseSha = pushEvent.before;
     const newHeadSha = pushEvent.after;
 
@@ -243,6 +224,8 @@ async function main() {
           .request({ url: response.data.diff_url })
           .then((res) => res.data)
       : null;
+    console.log("Diff:");
+    console.log(diff);
   } else {
     console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
     return;
