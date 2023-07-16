@@ -229,10 +229,10 @@ async function main() {
     return;
   }
 
-  if (!diff) {
-    console.log("No diff found");
-    return;
-  }
+  // if (!diff) {
+  //   console.log("No diff found");
+  //   return;
+  // }
 
   const parsedDiff = parseDiff(diff);
 
