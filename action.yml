@@ -7,6 +7,9 @@ inputs:
   OPENAI_API_KEY:
     description: "OpenAI API key for GPT."
     required: true
+  OPENAI_MODEL:
+    description: "OpenAI model for GPT."
+    required: true
   exclude:
     description: "Glob patterns to exclude files from the diff analysis"
     required: false
