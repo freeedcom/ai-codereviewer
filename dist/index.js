@@ -16613,8 +16613,8 @@ const openai_1 = __nccwpck_require__(8538);
 const rest_1 = __nccwpck_require__(7461);
 const parse_diff_1 = __importDefault(__nccwpck_require__(851));
 const minimatch_1 = __importDefault(__nccwpck_require__(332));
-const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
-const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
+const GITHUB_TOKEN = core.getInput('GITHUB_TOKEN');
+const OPENAI_API_KEY = core.getInput('OPENAI_API_KEY');
 const OPENAI_MODEL = core.getInput('OPENAI_MODEL');
 const octokit = new rest_1.Octokit({ auth: GITHUB_TOKEN });
 const configuration = new openai_1.Configuration({
@@ -16624,7 +16624,7 @@ const openai = new openai_1.OpenAIApi(configuration);
 function getPRDetails() {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        const { repository, number } = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH || "", "utf8"));
+        const { repository, number } = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH || '', 'utf8'));
         const prResponse = yield octokit.pulls.get({
             owner: repository.owner.login,
             repo: repository.name,
@@ -16634,8 +16634,8 @@ function getPRDetails() {
             owner: repository.owner.login,
             repo: repository.name,
             pull_number: number,
-            title: (_a = prResponse.data.title) !== null && _a !== void 0 ? _a : "",
-            description: (_b = prResponse.data.body) !== null && _b !== void 0 ? _b : "",
+            title: (_a = prResponse.data.title) !== null && _a !== void 0 ? _a : '',
+            description: (_b = prResponse.data.body) !== null && _b !== void 0 ? _b : '',
         };
     });
 }
@@ -16645,7 +16645,7 @@ function getDiff(owner, repo, pull_number) {
             owner,
             repo,
             pull_number,
-            mediaType: { format: "diff" },
+            mediaType: { format: 'diff' },
         });
         // @ts-expect-error - response.data is a string
         return response.data;
@@ -16655,7 +16655,7 @@ function analyzeCode(parsedDiff, prDetails) {
     return __awaiter(this, void 0, void 0, function* () {
         const comments = [];
         for (const file of parsedDiff) {
-            if (file.to === "/dev/null")
+            if (file.to === '/dev/null')
                 continue; // Ignore deleted files
             for (const chunk of file.chunks) {
                 const prompt = createPrompt(file, chunk, prDetails);
@@ -16692,7 +16692,7 @@ function createPrompt(file, chunk, prDetails) {
 - Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
 - IMPORTANT: NEVER suggest adding comments to the code.
-- If you don't have anything to say just say I dont have anything to say
+- If you don't have anything to say just say I don't have anything to say
 Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
   
 Pull request title: ${prDetails.title}
@@ -16709,7 +16709,7 @@ ${chunk.content}
 ${chunk.changes
         // @ts-expect-error - ln and ln2 exists where needed
         .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
-        .join("\n")}
+        .join('\n')}
 \`\`\`
 `;
 }
@@ -16727,15 +16727,15 @@ function getAIResponse(prompt) {
         try {
             const response = yield openai.createChatCompletion(Object.assign(Object.assign({}, queryConfig), { messages: [
                     {
-                        role: "system",
+                        role: 'system',
                         content: prompt,
                     },
                 ] }));
-            const res = ((_b = (_a = response.data.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.trim()) || "nothing can be said";
+            const res = ((_b = (_a = response.data.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.trim()) || 'nothing can be said';
             return JSON.parse(res);
         }
         catch (error) {
-            console.error("Error:", error);
+            console.error('Error:', error);
             return null;
         }
     });
@@ -16759,60 +16759,69 @@ function createReviewComment(owner, repo, pull_number, comments) {
             repo,
             pull_number,
             comments,
-            event: "COMMENT",
+            event: 'COMMENT',
         });
     });
 }
 function main() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
-        const prDetails = yield getPRDetails();
-        let diff;
-        const eventData = JSON.parse((0, fs_1.readFileSync)((_a = process.env.GITHUB_EVENT_PATH) !== null && _a !== void 0 ? _a : "", "utf8"));
-        if (eventData.action === "opened") {
-            diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
-        }
-        else if (eventData.action === "synchronize") {
-            const newBaseSha = eventData.before;
-            const newHeadSha = eventData.after;
-            const response = yield octokit.repos.compareCommits({
-                owner: prDetails.owner,
-                repo: prDetails.repo,
-                base: newBaseSha,
-                head: newHeadSha,
+        try {
+            const prDetails = yield getPRDetails();
+            let diff;
+            const eventData = JSON.parse((0, fs_1.readFileSync)((_a = process.env.GITHUB_EVENT_PATH) !== null && _a !== void 0 ? _a : '', 'utf8'));
+            if (eventData.action === 'opened') {
+                diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
+                console.log('Diff retrieved for opened event.');
+            }
+            else if (eventData.action === 'synchronize') {
+                const newBaseSha = eventData.before;
+                const newHeadSha = eventData.after;
+                const response = yield octokit.repos.compareCommits({
+                    owner: prDetails.owner,
+                    repo: prDetails.repo,
+                    base: newBaseSha,
+                    head: newHeadSha,
+                });
+                diff = response.data.diff_url
+                    ? yield octokit
+                        .request({ url: response.data.diff_url })
+                        .then((res) => res.data)
+                    : null;
+                console.log('Diff retrieved for synchronize event.');
+            }
+            else {
+                console.log('Unsupported event:', process.env.GITHUB_EVENT_NAME);
+                return;
+            }
+            if (!diff) {
+                console.log('No diff found');
+                return;
+            }
+            const parsedDiff = (0, parse_diff_1.default)(diff);
+            const excludePatterns = core
+                .getInput('exclude')
+                .split(',')
+                .map((s) => s.trim());
+            const filteredDiff = parsedDiff.filter((file) => {
+                return !excludePatterns.some((pattern) => { var _a; return (0, minimatch_1.default)((_a = file.to) !== null && _a !== void 0 ? _a : '', pattern); });
             });
-            diff = response.data.diff_url
-                ? yield octokit
-                    .request({ url: response.data.diff_url })
-                    .then((res) => res.data)
-                : null;
+            const comments = yield analyzeCode(filteredDiff, prDetails);
+            if (comments.length > 0) {
+                yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments);
+                console.log(`Review comment created with ${comments.length} comment(s).`);
+            }
+            else {
+                console.log('No comments to create.');
+            }
         }
-        else {
-            console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
-            return;
-        }
-        if (!diff) {
-            console.log("No diff found");
-            return;
-        }
-        const parsedDiff = (0, parse_diff_1.default)(diff);
-        const excludePatterns = core
-            .getInput("exclude")
-            .split(",")
-            .map((s) => s.trim());
-        const filteredDiff = parsedDiff.filter((file) => {
-            return !excludePatterns.some((pattern) => { var _a; return (0, minimatch_1.default)((_a = file.to) !== null && _a !== void 0 ? _a : "", pattern); });
-        });
-        const comments = yield analyzeCode(filteredDiff, prDetails);
-        if (comments.length > 0) {
-            yield createReviewComment(prDetails.owner, prDetails.repo, prDetails.pull_number, comments);
+        catch (error) {
+            console.error('Error:', error);
+            process.exit(1);
         }
     });
 }
-main().catch((error) => {
-    console.error("Error:", error);
-    process.exit(1);
-});
+main();
 
 
 /***/ }),
