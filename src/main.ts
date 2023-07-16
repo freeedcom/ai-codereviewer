@@ -104,7 +104,7 @@ function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
 - Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
 - IMPORTANT: NEVER suggest adding comments to the code.
-
+- If you don't have anything to say just say I dont have anything to say
 Review the following code diff in the file "${
     file.to
   }" and take the pull request title and description into account when writing the response.
@@ -152,7 +152,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
       ],
     });
 
-    const res = response.data.choices[0].message?.content?.trim() || "[]";
+    const res = response.data.choices[0].message?.content?.trim() || "nothing can be said";
     return JSON.parse(res);
   } catch (error) {
     console.error("Error:", error);
@@ -170,7 +170,7 @@ function createComment(
 ): Array<{ body: string; path: string; line: number }> {
   return aiResponses.flatMap((aiResponse) => {
     if (!file.to) {
-      return [];
+       return []
     }
     return {
       body: aiResponse.reviewComment,
