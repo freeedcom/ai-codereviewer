@@ -62,6 +62,26 @@ the OpenAI API. It then generates review comments based on the AI's response and
 Contributions are welcome! Please feel free to submit issues or pull requests to improve the AI Code Reviewer GitHub
 Action.
 
+If you make any changes to the code, please follow these steps to compile the code before submitting your changes:
+
+1. Install the required dependencies by running the following command:
+   ```bash
+   yarn install
+   ```
+2. To compile the code, use the following command:
+```bash
+   make compile
+```
+
+
+3. After compiling the code, test it thoroughly to ensure everything is working as expected.
+
+4. Submit your changes as a pull request, providing a clear description of the changes made and the problem it solves
+
+
+Thank you for your contributions!
+
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.

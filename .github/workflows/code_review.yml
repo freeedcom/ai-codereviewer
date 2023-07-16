@@ -16,4 +16,5 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: 'gpt-3.5-turbo'  ## change the model if according to your requirements
           exclude: "yarn.lock,dist/**"
