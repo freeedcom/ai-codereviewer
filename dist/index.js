@@ -210,15 +210,16 @@ function main() {
             const newBaseSha = eventData.before;
             const newHeadSha = eventData.after;
             const response = yield octokit.repos.compareCommits({
-                headers: {
-                    accept: "application/vnd.github.v3.diff",
-                },
                 owner: prDetails.owner,
                 repo: prDetails.repo,
                 base: newBaseSha,
                 head: newHeadSha,
             });
-            diff = String(response.data);
+            diff = response.data.diff_url
+                ? yield octokit
+                    .request({ url: response.data.diff_url })
+                    .then((res) => res.data)
+                : null;
         }
         else {
             console.log("Unsupported event:", process.env.GITHUB_EVENT_NAME);
