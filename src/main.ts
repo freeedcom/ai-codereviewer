@@ -7,6 +7,7 @@ import minimatch from "minimatch";
 
 const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
+const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
@@ -132,7 +133,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
   reviewComment: string;
 }> | null> {
   const queryConfig = {
-    model: "gpt-4",
+    model: OPENAI_API_MODEL,
     temperature: 0.2,
     max_tokens: 700,
     top_p: 1,
