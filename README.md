@@ -63,7 +63,7 @@ the OpenAI API. It then generates review comments based on the AI's response and
 Contributions are welcome! Please feel free to submit issues or pull requests to improve the AI Code Reviewer GitHub
 Action.
 
-Let the maintainer generate the final package.
+Let the maintainer generate the final package (`yarn build` & `yarn package`).
 
 ## License
 

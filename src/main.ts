@@ -78,22 +78,6 @@ async function analyzeCode(
   return comments;
 }
 
-async function getBaseAndHeadShas(
-  owner: string,
-  repo: string,
-  pull_number: number
-): Promise<{ baseSha: string; headSha: string }> {
-  const prResponse = await octokit.pulls.get({
-    owner,
-    repo,
-    pull_number,
-  });
-  return {
-    baseSha: prResponse.data.base.sha,
-    headSha: prResponse.data.head.sha,
-  };
-}
-
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `Your task is to review pull requests. Instructions:
 - Provide the response in following JSON format:  {"reviews": [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]}
