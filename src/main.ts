@@ -85,7 +85,7 @@ function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
     rules === ""
       ? ""
       : `Your review will only ensure the following rules are followed:
-${rules.replace(/\n/g, "\n- ")}`;
+${rules}`;
   const prompt = `Your name is ${botName}. Your task is to review pull requests. ${rulesPrompt}
 
 Here are your instructions regarding the format and the style of the review:
