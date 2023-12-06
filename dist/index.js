@@ -112,7 +112,7 @@ function createPrompt(file, chunk, prDetails) {
         ? ""
         : `Your review will only ensure the following rules are followed:
 ${rules.replace(/\n/g, "\n- ")}`;
-    return `Your name is ${botName}. Your task is to review pull requests. ${rulesPrompt}
+    const prompt = `Your name is ${botName}. Your task is to review pull requests. ${rulesPrompt}
 Here are your instructions regarding the format and the style of the review:
 - Provide the response in following JSON format:  {"reviews": [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]}
 - Do not give positive comments or compliments.
@@ -129,7 +129,9 @@ Pull request description:
 
 ---
 ${prDetails.description}
----
+---`;
+    console.log(prompt);
+    return `${prompt}
 
 Git diff to review:
 
