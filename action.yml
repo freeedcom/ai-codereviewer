@@ -11,6 +11,14 @@ inputs:
     description: "OpenAI API model."
     required: false
     default: "gpt-4"
+  bot_name:
+    description: "The name of the bot"
+    required: false
+    default: "AI Codereviewer"
+  rules:
+    description: "The list of rules the reviewer must check"
+    required: false
+    default: "AI Codereviewer"
   exclude:
     description: "Glob patterns to exclude files from the diff analysis"
     required: false
