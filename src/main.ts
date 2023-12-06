@@ -79,11 +79,20 @@ async function analyzeCode(
 }
 
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
-  return `Your task is to review pull requests. Instructions:
+  const botName = core.getInput("bot_name");
+  const rules = core.getInput("rules");
+  const rulesPrompt =
+    rules === ""
+      ? ""
+      : `Your review will only ensure the following rules are followed:
+${rules.replace(/\n/g, "\n- ")}`;
+  return `Your name is ${botName}. Your task is to review pull requests. ${rulesPrompt}
+Here are your instructions regarding the format and the style of the review:
 - Provide the response in following JSON format:  {"reviews": [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]}
 - Do not give positive comments or compliments.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise "reviews" should be an empty array.
 - Write the comment in GitHub Markdown format.
+- You can suggest a fix in a reviewComment if you want to by using a \`\`\`suggestion\`\`\` code block.
 - Use the given description only for the overall context and only comment the code.
 - IMPORTANT: NEVER suggest adding comments to the code.
 
