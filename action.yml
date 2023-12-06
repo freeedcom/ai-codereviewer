@@ -18,7 +18,7 @@ inputs:
   rules:
     description: "The list of rules the reviewer must check"
     required: false
-    default: "AI Codereviewer"
+    default: ""
   exclude:
     description: "Glob patterns to exclude files from the diff analysis"
     required: false
