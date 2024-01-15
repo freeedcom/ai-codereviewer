@@ -14,7 +14,7 @@ jobs:
       - name: Code Review
         uses: freeedcom/ai-codereviewer@main
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: "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"
+          OPENAI_API_KEY: "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"
           OPENAI_API_MODEL: "gpt-4-1106-preview"
           exclude: "yarn.lock,dist/**"
