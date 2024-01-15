@@ -19,7 +19,9 @@ review process.
 2. Add the OpenAI API key as a GitHub Secret in your repository with the name `OPENAI_API_KEY`. You can find more
    information about GitHub Secrets [here](https://docs.github.com/en/actions/reference/encrypted-secrets).
 
-3. Create a `.github/workflows/main.yml` file in your repository and add the following content:
+3. Fork this repository to your account or organization
+
+4. Create a `.github/workflows/main.yml` file in your repository and add the following content:
 
 ```yaml
 name: AI Code Reviewer
@@ -38,7 +40,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: AI Code Reviewer
-        uses: your-username/ai-code-reviewer@main
+        uses: your-username/ai-codereviewer@main
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # The GITHUB_TOKEN is there by default so you just need to keep it like it is and not necessarily need to add it as secret as it will throw an error. [More Details](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret)
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -46,12 +48,11 @@ jobs:
           exclude: "**/*.json, **/*.md" # Optional: exclude patterns separated by commas
 ```
 
-4. Replace `your-username` with your GitHub username or organization name where the AI Code Reviewer repository is
-   located.
+5. Replace `your-username/ai-codereviewer` with the name of the forked repository. For example, if you forked the repository to `MyUsername/ai-code-reviewer`, then you would replace `uses: your-account/ai-codereviewer@main` with `uses: MyUsername/ai-code-reviewer@main`.
 
-5. Customize the `exclude` input if you want to ignore certain file patterns from being reviewed.
+6. Customize the `exclude` input if you want to ignore certain file patterns from being reviewed.
 
-6. Commit the changes to your repository, and AI Code Reviewer will start working on your future pull requests.
+7. Commit the changes to your repository, and AI Code Reviewer will start working on your future pull requests.
 
 ## How It Works
 
