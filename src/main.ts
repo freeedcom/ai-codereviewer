@@ -194,6 +194,12 @@ async function main() {
       prDetails.repo,
       prDetails.pull_number
     );
+  } else if (eventData.action === "review_requested") {
+    diff = await getDiff(
+      prDetails.owner,
+      prDetails.repo,
+      prDetails.pull_number
+    );
   } else if (eventData.action === "synchronize") {
     const newBaseSha = eventData.before;
     const newHeadSha = eventData.after;
