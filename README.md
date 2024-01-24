@@ -29,6 +29,7 @@ on:
     types:
       - opened
       - synchronize
+      - review_requested
 permissions: write-all
 jobs:
   review:
