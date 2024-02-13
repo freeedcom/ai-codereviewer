@@ -115,7 +115,7 @@ function createPrompt(file, chunk, prDetails) {
 - IMPORTANT: NEVER suggest adding comments to the code.
 
 Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
-  
+
 Pull request title: ${prDetails.title}
 Pull request description:
 
@@ -192,7 +192,8 @@ function main() {
         const prDetails = yield getPRDetails();
         let diff;
         const eventData = JSON.parse((0, fs_1.readFileSync)((_a = process.env.GITHUB_EVENT_PATH) !== null && _a !== void 0 ? _a : "", "utf8"));
-        if (eventData.action === "opened") {
+        let actionNames = ["opened", "labeled", "reopened"];
+        if (actionNames.includes(eventData.action)) {
             diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
         }
         else if (eventData.action === "synchronize") {
