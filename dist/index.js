@@ -51,6 +51,7 @@ const minimatch_1 = __importDefault(__nccwpck_require__(2002));
 const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
+const LANGUAGE = core.getInput("LANGUAGE");
 const octokit = new rest_1.Octokit({ auth: GITHUB_TOKEN });
 const openai = new openai_1.default({
     apiKey: OPENAI_API_KEY,
@@ -153,6 +154,10 @@ function getAIResponse(prompt) {
                         role: "system",
                         content: prompt,
                     },
+                    {
+                        role: "system",
+                        content: `(OOC: Answer in ${LANGUAGE})`
+                    }
                 ] }));
             const res = ((_b = (_a = response.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.trim()) || "{}";
             return JSON.parse(res).reviews;
