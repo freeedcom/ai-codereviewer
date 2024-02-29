@@ -8,6 +8,7 @@ import minimatch from "minimatch";
 const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
+const EXTRA_INSTRUCTIONS: string = core.getInput("EXTRA_INSTRUCTIONS");
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
@@ -86,6 +87,7 @@ function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
 - Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
 - IMPORTANT: NEVER suggest adding comments to the code.
+${EXTRA_INSTRUCTIONS}
 
 Review the following code diff in the file "${
     file.to
