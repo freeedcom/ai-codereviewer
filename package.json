@@ -14,7 +14,6 @@
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@octokit/rest": "^19.0.7",
-    "jsonic": "^1.0.1",
     "minimatch": "^7.4.2",
     "openai": "^4.20.1",
     "parse-diff": "^0.11.1",

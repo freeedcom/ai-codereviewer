@@ -345,11 +345,6 @@ is-plain-object@^5.0.0:
   resolved "https://registry.yarnpkg.com/is-plain-object/-/is-plain-object-5.0.0.tgz#4427f50ab3429e9025ea7d52e9043a9ef4159344"
   integrity sha512-VRSzKkbMm5jMDoKLbltAkFQ5Qr7VDiTFGXxYFXXowVj387GeGNOCsOH6Msy00SGZ3Fp84b1Naa1psqgcCIEP5Q==
 
-jsonic@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/jsonic/-/jsonic-1.0.1.tgz#817054df7abfaf525ecf39d6647a2ed6d5fca7f1"
-  integrity sha512-6GitEN4plTuB/I1o9kDZl7Pgc+DvFG1BG88IqaUz4eQglCA1uAgxWdXhLNA6ffaYsmzPjOysDpp6CYTwRiuXLw==
-
 make-error@^1.1.1:
   version "1.3.6"
   resolved "https://registry.yarnpkg.com/make-error/-/make-error-1.3.6.tgz#2eb2e37ea9b67c4891f684a1394799af484cf7a2"
