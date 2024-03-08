@@ -67,7 +67,7 @@ async function analyzeCode(
     if (file.to === "/dev/null") continue; // Ignore deleted files
     for (const chunk of file.chunks) {
       // Ignore diffs longer than 2000 characters
-      if (chunk.content.length > 2000) continue;
+      if (chunk.content.length > 4000) continue;
 
       const prompt = createPrompt(file, chunk, prDetails);
       const aiResponse = await getAIResponse(prompt);
