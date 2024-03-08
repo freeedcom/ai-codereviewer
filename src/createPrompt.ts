@@ -12,12 +12,10 @@ export interface PRDetails {
 const language: string = core.getInput("language") || 'English';
 
 export function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
-  console.log('language', language);
-
   return `Your task is to review pull requests. Instructions:
 - Provide the response in following JSON format:  {"reviews": [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]}
 - Do not give positive comments or compliments.
-- Provide review in ${language} language.
+- Provide comments in ${language} language.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise "reviews" should be an empty array.
 - Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
