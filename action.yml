@@ -1,4 +1,4 @@
-name: "AI Code Review Action"
+name: "AI Code Review Action with Language Settings"
 description: "Perform code reviews and comment on diffs using OpenAI API."
 inputs:
   GITHUB_TOKEN:
@@ -18,7 +18,7 @@ inputs:
   exclude:
     description: "Glob patterns to exclude files from the diff analysis"
     required: false
-    default: ""
+    default: "**/*.json, **/*.md, yarn.lock, package-lock.json"
 runs:
   using: "node20"
   main: "dist/index.js"
