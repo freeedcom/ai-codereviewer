@@ -9,7 +9,7 @@ export interface PRDetails {
   description: string;
 }
 
-const language: string = core.getInput("language");
+const language: string = core.getInput("language") || 'English';
 
 export function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `Your task is to review pull requests. Instructions:
