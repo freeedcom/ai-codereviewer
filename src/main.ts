@@ -1,8 +1,8 @@
-import { readFileSync } from "fs";
+import {readFileSync} from "fs";
 import * as core from "@actions/core";
 import OpenAI from "openai";
-import { Octokit } from "@octokit/rest";
-import parseDiff, { Chunk, File } from "parse-diff";
+import {Octokit} from "@octokit/rest";
+import parseDiff, {Chunk, File} from "parse-diff";
 import minimatch from "minimatch";
 import {parseJsonForChatGPTResponse} from "./parseJsonForChatGPTResponse";
 
@@ -10,11 +10,11 @@ const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
 
-const octokit = new Octokit({ auth: GITHUB_TOKEN });
+const octokit = new Octokit({auth: GITHUB_TOKEN});
 
 const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-});
+                            apiKey: OPENAI_API_KEY,
+                          });
 
 interface PRDetails {
   owner: string;
@@ -25,14 +25,14 @@ interface PRDetails {
 }
 
 async function getPRDetails(): Promise<PRDetails> {
-  const { repository, number } = JSON.parse(
+  const {repository, number} = JSON.parse(
     readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
   );
   const prResponse = await octokit.pulls.get({
-    owner: repository.owner.login,
-    repo: repository.name,
-    pull_number: number,
-  });
+                                               owner: repository.owner.login,
+                                               repo: repository.name,
+                                               pull_number: number,
+                                             });
   return {
     owner: repository.owner.login,
     repo: repository.name,
@@ -48,11 +48,11 @@ async function getDiff(
   pull_number: number
 ): Promise<string | null> {
   const response = await octokit.pulls.get({
-    owner,
-    repo,
-    pull_number,
-    mediaType: { format: "diff" },
-  });
+                                             owner,
+                                             repo,
+                                             pull_number,
+                                             mediaType: {format: "diff"},
+                                           });
   // @ts-expect-error - response.data is a string
   return response.data;
 }
@@ -108,9 +108,9 @@ Git diff to review:
 \`\`\`diff
 ${chunk.content}
 ${chunk.changes
-  // @ts-expect-error - ln and ln2 exists where needed
-  .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
-  .join("\n")}
+    // @ts-expect-error - ln and ln2 exists where needed
+    .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
+    .join("\n")}
 \`\`\`
 `;
 }
@@ -128,27 +128,26 @@ async function getAIResponse(prompt: string): Promise<Array<{
     presence_penalty: 0,
   };
 
-  try {
-    const response = await openai.chat.completions.create({
-      ...queryConfig,
-      // return JSON if the model supports it:
-      ...(OPENAI_API_MODEL === "gpt-4-1106-preview"
-        ? { response_format: { type: "json_object" } }
-        : {}),
-      messages: [
-        {
-          role: "system",
-          content: prompt,
-        },
-      ],
-    });
+  const response =
+    await openai.chat.completions.create(
+      {
+        ...queryConfig,
+        // return JSON if the model supports it:
+        ...(OPENAI_API_MODEL === "gpt-4-1106-preview"
+          ? {response_format: {type: "json_object"}}
+          : {}),
+        messages: [
+          {
+            role: "system",
+            content: prompt,
+          },
+        ],
+      });
 
-    const res = response.choices[0].message?.content?.trim() || "{}";
-    return parseJsonForChatGPTResponse(res).reviews;
-  } catch (error) {
-    console.error("Error:", error);
-    return null;
-  }
+  const res = response.choices[0].message?.content?.trim() || "{}";
+  console.log("GPT response:")
+  console.log(res);
+  return parseJsonForChatGPTResponse(res).reviews;
 }
 
 function createComment(
@@ -178,12 +177,12 @@ async function createReviewComment(
   comments: Array<{ body: string; path: string; line: number }>
 ): Promise<void> {
   await octokit.pulls.createReview({
-    owner,
-    repo,
-    pull_number,
-    comments,
-    event: "COMMENT",
-  });
+                                     owner,
+                                     repo,
+                                     pull_number,
+                                     comments,
+                                     event: "COMMENT",
+                                   });
 }
 
 async function main() {
@@ -204,14 +203,14 @@ async function main() {
     const newHeadSha = eventData.after;
 
     const response = await octokit.repos.compareCommits({
-      headers: {
-        accept: "application/vnd.github.v3.diff",
-      },
-      owner: prDetails.owner,
-      repo: prDetails.repo,
-      base: newBaseSha,
-      head: newHeadSha,
-    });
+                                                          headers: {
+                                                            accept: "application/vnd.github.v3.diff",
+                                                          },
+                                                          owner: prDetails.owner,
+                                                          repo: prDetails.repo,
+                                                          base: newBaseSha,
+                                                          head: newHeadSha,
+                                                        });
 
     diff = String(response.data);
   } else {
@@ -233,7 +232,7 @@ async function main() {
 
   const filteredDiff = parsedDiff.filter((file) => {
     return !excludePatterns.some((pattern) =>
-      minimatch(file.to ?? "", pattern)
+                                   minimatch(file.to ?? "", pattern)
     );
   });
 
