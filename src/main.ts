@@ -226,11 +226,26 @@ async function main() {
         .split(",")
         .map((s) => s.trim());
 
-    const filteredDiff = parsedDiff.filter((file) => {
+    const includePatterns = core
+        .getInput("include")
+        .split(",")
+        .map((s) => s.trim());
+    if (includePatterns.length === 0) {
+        includePatterns.push("*")
+    }
+
+    let filteredDiff = parsedDiff.filter((file) => {
         return !excludePatterns.some((pattern) => {
-            let isMatch = minimatch(file.to ?? "", pattern);
-            console.error(file+","+file.to+","+pattern+": "+isMatch)
-            return isMatch
+                let isMatch = minimatch(file.to ?? "", pattern);
+                console.error(file + "," + file.to + "," + pattern + ": " + isMatch)
+                return isMatch
+            }
+        );
+    });
+    filteredDiff = filteredDiff.filter((file) => {
+        return includePatterns.some((pattern) => {
+                let isMatch = minimatch(file.to ?? "", pattern);
+                return isMatch
             }
         );
     });
