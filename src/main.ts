@@ -229,7 +229,7 @@ async function main() {
     const filteredDiff = parsedDiff.filter((file) => {
         return !excludePatterns.some((pattern) => {
             let isMatch = minimatch(file.to ?? "", pattern);
-            console.log(file+","+file.to+","+pattern+": "+isMatch)
+            console.error(file+","+file.to+","+pattern+": "+isMatch)
             return isMatch
             }
         );
