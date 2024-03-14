@@ -122,7 +122,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
         frequency_penalty: 0,
         presence_penalty: 0,
     };
-
+    console.log("Query:", prompt);
     try {
         const response = await openai.chat.completions.create({
             ...queryConfig,
